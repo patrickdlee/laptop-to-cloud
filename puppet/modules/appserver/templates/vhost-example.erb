@@ -1,0 +1,34 @@
+<VirtualHost *:80>
+  ServerName localhost
+  ServerAdmin webmaster@localhost
+
+  SetEnv APPLICATION_ENV <%= scope.lookupvar('::instanceenv') %>
+
+  DocumentRoot /var/www/example/current
+  <Directory /var/www/example/current>
+    Require all granted
+    Options Indexes FollowSymLinks
+
+    <IfModule mod_expires.c>
+      ExpiresActive On
+
+      <FilesMatch "\.(ico|pdf|flv|swf|svg|ttf|otf|eot|woff|js|css)$">
+        ExpiresDefault "access plus 1 year"
+      </FilesMatch>
+
+      <FilesMatch "\.(jpe?g|png|gif)$">
+        ExpiresDefault "access plus 1 year"
+      </FilesMatch>
+    </IfModule>
+
+    <IfModule mod_deflate.c>
+      AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css
+      AddOutputFilterByType DEFLATE application/x-javascript application/javascript
+      AddOutputFilterByType DEFLATE application/ecmascript application/rss+xml
+    </IfModule>
+  </Directory>
+
+  LogLevel warn
+  CustomLog ${APACHE_LOG_DIR}/example-access.log trueip_combined
+  ErrorLog ${APACHE_LOG_DIR}/example-error.log
+</VirtualHost>
