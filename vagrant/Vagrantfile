@@ -1,0 +1,49 @@
+#
+# Vagrant configuration for One4All
+#
+# requires VirtualBox 4.3+ and Vagrant 1.6.0+
+Vagrant.require_version ">= 1.6.0"
+VAGRANTFILE_API_VERSION = "2"
+VAGRANT_BOX_DIR = "https://s3.amazonaws.com/laptop-to-cloud-example/"
+VAGRANT_BOX_NAME = "packer-trusty32"
+CODE_FOLDER = "~/code/other/laptop-to-cloud"
+
+nodes = [
+  { :hostname => 'example', :ip => '192.168.0.42', :ram => 1024 }
+]
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  nodes.each do |node|
+    config.vm.define node[:hostname] do |node_config|
+      node_config.vm.box = VAGRANT_BOX_NAME
+      node_config.vm.box_url = VAGRANT_BOX_DIR + node_config.vm.box + ".box"
+      node_config.vm.hostname = node[:hostname] + ".box"
+      node_config.vm.network :private_network, ip: node[:ip]
+      node_config.vm.synced_folder CODE_FOLDER, "/home/vagrant/code"
+
+      memory = node[:ram] ? node[:ram] : 512
+      cpus = node[:cpus] ? node[:cpus] : 1
+      node_config.vm.provider :virtualbox do |vb|
+        vb.name = node[:hostname]
+        vb.memory = memory
+        vb.cpus = cpus
+      end
+
+      node_config.vm.provision :shell, :inline => "/usr/bin/apt-get update"
+
+      node_config.vm.provision :puppet do |puppet|
+        puppet.manifests_path = "../puppet/manifests"
+        puppet.manifest_file = "site.pp"
+        puppet.module_path = "../puppet/modules"
+        puppet.options = "--verbose"
+        puppet.facter = {
+          :fqdn         => node[:hostname],
+          :ec2_userdata => {
+            :role => node[:role] ? node[:role] : node[:hostname],
+            :env  => "development"
+          }.to_json
+        }
+      end
+    end
+  end
+end
