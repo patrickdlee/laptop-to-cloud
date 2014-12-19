@@ -1,0 +1,33 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Example instance",
+
+  "Resources": {
+    "example": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": "ami-cd7929fd",
+        "InstanceType": "m3.medium",
+        "AvailabilityZone": "us-west-2a",
+        "KeyName": "laptop-to-cloud",
+        "SecurityGroups": [ "Example" ],
+        "Tags": [
+          { "Key": "Name", "Value": "Example" },
+          { "Key": "Role", "Value": "example" },
+          { "Key": "Source", "Value": "CloudFormation" }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "{\"role\": \"example\", ",
+                "\"env\": \"production\"} "
+              ]
+            ]
+          }
+        }
+      }
+    }
+  }
+}
