@@ -1,0 +1,71 @@
+{
+  "description": "Ubuntu 14.04.1 32-bit Vagrant base box",
+
+  "builders": [
+    {
+      "type": "virtualbox-iso",
+      "vm_name": "packer-trusty32",
+
+      "iso_url": "http://releases.ubuntu.com/trusty/ubuntu-14.04.1-server-i386.iso",
+      "iso_checksum": "3aa14ca13d52df070870d39306f4a4eb",
+      "iso_checksum_type": "md5",
+
+      "ssh_username": "vagrant",
+      "ssh_password": "vagrant",
+      "ssh_wait_timeout": "60m",
+      "http_directory": "preseeds",
+      "http_port_min" : 9001,
+      "http_port_max" : 9001,
+
+      "boot_wait": "10s",
+      "boot_command" : [
+        "<esc><esc><enter><wait>",
+        "/install/vmlinuz noapic ",
+        "preseed/url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/ubuntu_preseed.cfg ",
+        "debian-installer=en_US auto locale=en_US kbd-chooser/method=us ",
+        "hostname=packer-trusty32 ",
+        "fb=false debconf/frontend=noninteractive ",
+        "keyboard-configuration/modelcode=SKIP keyboard-configuration/layout=USA ",
+        "keyboard-configuration/variant=USA console-setup/ask_detect=false ",
+        "initrd=/install/initrd.gz -- <enter>"
+      ],
+      "guest_os_type": "Ubuntu",
+      "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now",
+      "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
+      "virtualbox_version_file": ".vbox_version",
+
+      "vboxmanage": [
+        ["modifyvm", "{{.Name}}", "--memory", "1024"],
+        ["modifyvm", "{{.Name}}", "--cpus", "1"],
+        ["modifyvm", "{{.Name}}", "--pae", "on"]
+      ]
+    }
+  ],
+
+  "provisioners": [
+    {
+      "type": "shell",
+      "scripts": [
+        "./scripts/root_setup.sh",
+        "./scripts/vagrant_root_setup.sh"
+      ],
+      "execute_command": "echo 'vagrant' | sudo -S sh '{{ .Path }}'"
+    },
+    {
+      "type": "shell",
+      "script": "./scripts/vagrant_setup.sh"
+    },
+    {
+      "type": "shell",
+      "script": "./scripts/root_cleanup.sh",
+      "execute_command": "echo 'vagrant' | sudo -S sh '{{ .Path }}'"
+    }
+  ],
+
+  "post-processors": [
+    {
+      "type": "vagrant",
+      "output": "packer-trusty32.box"
+    }
+  ]
+}

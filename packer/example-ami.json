@@ -1,0 +1,50 @@
+{
+  "variables": {
+    "name_tag": "Example AMI (Ubuntu 14.04 64-bit)",
+    "ami_name": "trusty64-example-ami {{timestamp}}",
+    "region": "us-west-2",
+    "source_ami": "ami-978dd9a7",
+
+    "aws_access_key": "",
+    "aws_secret_key": ""
+  },
+
+  "builders": [
+    {
+      "type": "amazon-ebs",
+      "access_key": "{{user `aws_access_key`}}",
+      "secret_key": "{{user `aws_secret_key`}}",
+      "region": "{{user `region`}}",
+      "source_ami": "{{user `source_ami`}}",
+      "instance_type": "m1.small",
+      "ssh_username": "ubuntu",
+      "ami_name": "{{user `ami_name`}}",
+      "tags": {
+        "Name": "{{user `name_tag`}}",
+        "Source": "Packer"
+      }
+    }
+  ],
+
+  "provisioners": [
+    {
+      "type": "shell",
+      "script": "./scripts/root_setup.sh",
+      "execute_command": "echo 'ubuntu' | sudo -S sh '{{ .Path }}'"
+    },
+    {
+      "type": "puppet-masterless",
+      "manifest_file": "../puppet/manifests/site.pp",
+      "module_paths": ["../puppet/modules"],
+      "facter": {
+        "ec2_userdata": "{\"role\": \"example\", \"env\": \"production\"}"
+      },
+      "execute_command": "{{.FacterVars}}{{if .Sudo}} sudo -E {{end}}puppet apply --verbose --modulepath='{{.ModulePath}}:/etc/puppet/modules' --detailed-exitcodes {{.ManifestFile}}"
+    },
+    {
+      "type": "shell",
+      "script": "./scripts/root_cleanup.sh",
+      "execute_command": "echo 'ubuntu' | sudo -S sh '{{ .Path }}'"
+    }
+  ]
+}
